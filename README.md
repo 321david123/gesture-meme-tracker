@@ -29,6 +29,7 @@ Real-time hand gesture detection with meme display using MediaPipe and OpenCV!
    ```
 
 2. **Add meme images:**
+      - (these will change) 
    - Create an `images` folder in the same directory as the script (it will be created automatically if it doesn't exist)
    - Add the following image files:
      - `thumbs_up.jpg` - for thumbs up gesture
@@ -80,17 +81,21 @@ You can easily customize the script:
 **"No module named 'cv2'" or package import errors?**
 - You likely have multiple Python installations
 - Use the launcher script: `./run.sh`
+- You can ask cursor to run it
 - Or use the full Python path: `/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 gesture_meme_tracker.py`
 - Check which Python: `which python` and `which pip`
 
 **Webcam not opening?**
 - **macOS**: Grant camera permission in System Settings → Privacy & Security → Camera
 - Check if another application is using the webcam
+- Check if you are not connected to your phone's camera. 
 - Try changing `cv2.VideoCapture(0)` to `cv2.VideoCapture(1)` in the code
 
 **Gestures not being detected?**
 - Ensure your full hand is visible in the frame
 - Try adjusting lighting conditions
+- ** Do not detects multiple hands
+- ** Will keep track of one hand only
 - Make gestures more distinct
 
 **Missing meme images?**
