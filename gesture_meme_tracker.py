@@ -8,27 +8,28 @@ import mediapipe as mp
 import numpy as np
 import os
 
-# Initialize MediaPipe Hands
+# Initialize MediaPipe Hands and Face
 mp_hands = mp.solutions.hands
+mp_face_mesh = mp.solutions.face_mesh
 mp_drawing = mp.solutions.drawing_utils
 
-# Dictionary mapping gestures to meme image filenames
+# Dictionary mapping gestures to meme image/video filenames
 GESTURE_MEMES = {
-    "thumbs_up": "thumbs_up.jpg",
-    "peace": "peace.jpg",
-    "fist": "fist.jpg",
-    "open_palm": "open_palm.jpg",
-    "ok_sign": "ok_sign.jpg",
-    "none": "default.jpg"  # Default image when no gesture detected
+    "jijija": "JIJIJA.mp4",      # Laughing emotionally
+    "mimimi": "MIMIMI.mp4",      # Hands close to face cheeks
+    "sixseven": "SIXSEVEN.mp4",  # Hands moving up/down like balance
+    "cerrao": "CERRAO.mp4",      # One finger on jaw
+    "none": "ok_sign.jpg"  # Default/neutral gesture
 }
 
 
-def detect_gesture(hand_landmarks):
+def detect_gesture(hand_landmarks, all_hands=None, face_landmarks=None):
     """
     Detects hand gesture based on landmark positions.
     
     Args:
         hand_landmarks: MediaPipe hand landmarks object containing 21 points
+        all_hands: List of all detected hands (for two-hand gestures)
         
     Returns:
         String representing the detected gesture name
@@ -53,21 +54,6 @@ def detect_gesture(hand_landmarks):
         # In image coordinates, y increases downward, so tip.y < pip.y means extended
         return landmarks[tip_idx].y < landmarks[pip_idx].y and landmarks[pip_idx].y < landmarks[mcp_idx].y
     
-    # Helper function to check if thumb is extended (uses x-coordinate)
-    def is_thumb_extended():
-        """Check if thumb is extended by comparing x-coordinates"""
-        # Thumb extends horizontally, so we use x-coordinates
-        # For right hand: thumb extends left (smaller x)
-        # For left hand: thumb extends right (larger x)
-        wrist_x = landmarks[0].x
-        thumb_tip_x = landmarks[4].x
-        thumb_ip_x = landmarks[3].x
-        thumb_mcp_x = landmarks[2].x
-        
-        # Check if thumb is extended away from palm
-        thumb_extended = abs(thumb_tip_x - wrist_x) > abs(thumb_mcp_x - wrist_x)
-        return thumb_extended and landmarks[4].y < landmarks[3].y
-    
     # Count extended fingers (excluding thumb)
     extended_fingers = []
     
@@ -83,64 +69,136 @@ def detect_gesture(hand_landmarks):
     if is_finger_extended(16, 14, 13):
         extended_fingers.append("ring")
     
+    # Pinky finger (20: tip, 18: PIP, 17: MCP)
     if is_finger_extended(20, 18, 17):
         extended_fingers.append("pinky")
     
-    thumb_extended = is_thumb_extended()
-    
     num_extended = len(extended_fingers)
     
-    if thumb_extended and num_extended == 0:
-        return "thumbs_up"
-    
-    if not thumb_extended and num_extended == 2 and "index" in extended_fingers and "middle" in extended_fingers:
-        return "peace"
-    
-    if num_extended >= 4:
-        return "open_palm"
-    
-    if not thumb_extended and num_extended == 0:
-        return "fist"
-    
-    thumb_tip = landmarks[4]
+    # Get key landmarks
+    wrist = landmarks[0]
     index_tip = landmarks[8]
     
-    distance = np.sqrt((thumb_tip.x - index_tip.x)**2 + (thumb_tip.y - index_tip.y)**2)
+    # CUSTOM GESTURES
     
-    if distance < 0.05 and num_extended >= 2:
-        return "ok_sign"
+    # JIJIJA - Just laughing (mouth open detection only)
+    if face_landmarks:
+        # Key face landmarks for mouth detection
+        # 13: upper lip, 14: lower lip, 61: mouth corner, 84: mouth corner
+        upper_lip = face_landmarks.landmark[13]
+        lower_lip = face_landmarks.landmark[14]
+        left_corner = face_landmarks.landmark[61]
+        right_corner = face_landmarks.landmark[84]
+        
+        # Calculate mouth opening
+        mouth_height = abs(upper_lip.y - lower_lip.y)
+        mouth_width = abs(right_corner.x - left_corner.x)
+        
+        # Check if mouth is open (laughing) - very sensitive thresholds
+        if mouth_height > 0.01 and mouth_width > 0.005:  # Very sensitive thresholds for open mouth
+            return "jijija"
     
+    # MIMIMI - Both hands closed (fists) anywhere
+    if all_hands and len(all_hands) == 2:
+        # Check if both hands have no fingers extended (closed fists)
+        hand1_extended = 0
+        hand2_extended = 0
+        
+        # Count extended fingers for hand 1
+        for tip_idx, pip_idx, mcp_idx in [(8, 6, 5), (12, 10, 9), (16, 14, 13), (20, 18, 17)]:
+            if all_hands[0].landmark[tip_idx].y < all_hands[0].landmark[pip_idx].y:
+                hand1_extended += 1
+        
+        # Count extended fingers for hand 2
+        for tip_idx, pip_idx, mcp_idx in [(8, 6, 5), (12, 10, 9), (16, 14, 13), (20, 18, 17)]:
+            if all_hands[1].landmark[tip_idx].y < all_hands[1].landmark[pip_idx].y:
+                hand2_extended += 1
+        
+        # Both hands closed (no fingers extended)
+        if hand1_extended == 0 and hand2_extended == 0:
+            return "mimimi"
+    
+    # CERRAO - One hand closed but one finger (index) extended
+    if num_extended == 1 and "index" in extended_fingers:
+        return "cerrao"
+    
+    # SIXSEVEN - Hands extended like doing a balance
+    # Both hands with open palms, extended outward
+    if all_hands and len(all_hands) == 2:
+        # Check if both hands have extended fingers
+        hand1_extended = sum([
+            all_hands[0].landmark[8].y < all_hands[0].landmark[6].y,
+            all_hands[0].landmark[12].y < all_hands[0].landmark[10].y,
+            all_hands[0].landmark[16].y < all_hands[0].landmark[14].y,
+        ])
+        hand2_extended = sum([
+            all_hands[1].landmark[8].y < all_hands[1].landmark[6].y,
+            all_hands[1].landmark[12].y < all_hands[1].landmark[10].y,
+            all_hands[1].landmark[16].y < all_hands[1].landmark[14].y,
+        ])
+        
+        if hand1_extended >= 2 and hand2_extended >= 2:
+            # Check if hands are spread apart (like balancing)
+            hand1_wrist = all_hands[0].landmark[0]
+            hand2_wrist = all_hands[1].landmark[0]
+            x_distance = abs(hand1_wrist.x - hand2_wrist.x)
+            if x_distance > 0.3:  # Hands far apart
+                return "sixseven"
+    
+    # Default - no gesture detected
     return "none"
 
 
-def load_meme_images(images_folder):
+def load_meme_media(images_folder):
     """
-    Load all meme images from the specified folder.
+    Load all meme images and videos from the specified folder.
     
     Args:
-        images_folder: Path to folder containing meme images
+        images_folder: Path to folder containing meme images/videos
         
     Returns:
-        Dictionary mapping gesture names to loaded images
+        Tuple of (media_dict, video_caps_dict, is_video_dict):
+        - media_dict: Images or first frame of videos
+        - video_caps_dict: VideoCapture objects for videos
+        - is_video_dict: Boolean flags indicating if media is video
     """
     meme_images = {}
+    video_caps = {}
+    is_video = {}
     
     for gesture, filename in GESTURE_MEMES.items():
-        image_path = os.path.join(images_folder, filename)
+        media_path = os.path.join(images_folder, filename)
         
-        # Try to load image, create placeholder if not found
-        if os.path.exists(image_path):
-            img = cv2.imread(image_path)
-            if img is not None:
-                meme_images[gesture] = img
+        # Check if it's a video file
+        if filename.endswith(('.mp4', '.avi', '.mov', '.webm')):
+            is_video[gesture] = True
+            if os.path.exists(media_path):
+                cap = cv2.VideoCapture(media_path)
+                if cap.isOpened():
+                    video_caps[gesture] = cap
+                    # Read first frame for display
+                    ret, frame = cap.read()
+                    if ret:
+                        meme_images[gesture] = frame
+                    else:
+                        meme_images[gesture] = create_placeholder_image(gesture)
+                else:
+                    meme_images[gesture] = create_placeholder_image(gesture)
             else:
-                # Create placeholder if image fails to load
                 meme_images[gesture] = create_placeholder_image(gesture)
         else:
-            # Create placeholder if image doesn't exist
-            meme_images[gesture] = create_placeholder_image(gesture)
+            # It's an image file
+            is_video[gesture] = False
+            if os.path.exists(media_path):
+                img = cv2.imread(media_path)
+                if img is not None:
+                    meme_images[gesture] = img
+                else:
+                    meme_images[gesture] = create_placeholder_image(gesture)
+            else:
+                meme_images[gesture] = create_placeholder_image(gesture)
     
-    return meme_images
+    return meme_images, video_caps, is_video
 
 
 def create_placeholder_image(gesture_name):
@@ -158,11 +216,10 @@ def create_placeholder_image(gesture_name):
     
     # Different colors for different gestures
     colors = {
-        "thumbs_up": (0, 255, 0),      # Green
-        "peace": (255, 255, 0),         # Cyan
-        "fist": (0, 0, 255),            # Red
-        "open_palm": (255, 0, 255),     # Magenta
-        "ok_sign": (0, 255, 255),       # Yellow
+        "jijija": (0, 165, 255),        # Orange
+        "mimimi": (203, 192, 255),      # Pink
+        "sixseven": (255, 144, 30),     # Blue
+        "cerrao": (147, 20, 255),       # Purple
         "none": (128, 128, 128)         # Gray
     }
     
@@ -204,15 +261,16 @@ def main():
     Main function to run the Gesture Meme Tracker application.
     """
     print("=" * 60)
-    print("Gesture Meme Tracker running — press 'q' to quit.")
+    print("Gesture Meme Tracker - Clash Royale Edition")
+    print("Press 'q' to quit")
     print("=" * 60)
-    print("\nDetectable gestures:")
-    print("👍 Thumbs up")
-    print("✌️  Peace sign")
-    print("✊ Fist")
-    print("🖐️  Open palm")
-    print("👌 OK sign")
-    print("\nMake sure your hand is visible to the camera!")
+    print("\nCustom Gestures:")
+    print("😂 JIJIJA - Just laugh (mouth open)")
+    print("🤐 MIMIMI - Both hands closed (fists)")
+    print("⚖️  SIXSEVEN - Balance pose (hands extended wide)")
+    print("🤫 CERRAO - One finger up (index finger)")
+    print("👌 Default - Neutral state (no gesture)")
+    print("\nMake sure your hand(s) are visible to the camera!")
     print("=" * 60)
     
     # Create images folder if it doesn't exist
@@ -224,8 +282,8 @@ def main():
         print("Expected filenames:", list(GESTURE_MEMES.values()))
         print()
     
-    # Load meme images
-    meme_images = load_meme_images(images_folder)
+    # Load meme images and videos
+    meme_images, video_caps, is_video = load_meme_media(images_folder)
     
     # Initialize webcam
     cap = cv2.VideoCapture(0)
@@ -239,13 +297,19 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
     
-    # Initialize MediaPipe Hands
+    # Initialize MediaPipe Hands and Face
     with mp_hands.Hands(
         static_image_mode=False,          # False for video stream
-        max_num_hands=1,                   # Detect one hand at a time
+        max_num_hands=2,                   # Detect up to two hands
         min_detection_confidence=0.7,      # Confidence threshold for detection
         min_tracking_confidence=0.5        # Confidence threshold for tracking
-    ) as hands:
+    ) as hands, mp_face_mesh.FaceMesh(
+        static_image_mode=False,          # False for video stream
+        max_num_faces=1,                  # Detect one face
+        refine_landmarks=True,            # Refine landmarks for better accuracy
+        min_detection_confidence=0.5,     # Confidence threshold for detection
+        min_tracking_confidence=0.5       # Confidence threshold for tracking
+    ) as face_mesh:
         
         current_gesture = "none"
         
@@ -266,13 +330,27 @@ def main():
             # Convert BGR to RGB (MediaPipe uses RGB)
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             
-            # Process the frame with MediaPipe Hands
-            results = hands.process(rgb_frame)
+            # Process the frame with MediaPipe Hands and Face
+            hand_results = hands.process(rgb_frame)
+            face_results = face_mesh.process(rgb_frame)
+            
+            # Check if face detected and draw landmarks
+            face_landmarks = None
+            if face_results.multi_face_landmarks:
+                face_landmarks = face_results.multi_face_landmarks[0]
+                # Draw face landmarks (optional, can comment out for cleaner view)
+                mp_drawing.draw_landmarks(
+                    frame, 
+                    face_landmarks, 
+                    mp_face_mesh.FACEMESH_CONTOURS,
+                    None,
+                    mp_drawing.DrawingSpec(color=(80, 256, 121), thickness=1, circle_radius=1)
+                )
             
             # Check if hand(s) detected
-            if results.multi_hand_landmarks:
-                for hand_landmarks in results.multi_hand_landmarks:
-                    # Draw hand landmarks on the frame
+            if hand_results.multi_hand_landmarks:
+                # Draw all hand landmarks
+                for hand_landmarks in hand_results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(
                         frame, 
                         hand_landmarks, 
@@ -280,11 +358,39 @@ def main():
                         mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
                         mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2)
                     )
-                    
-                    # Detect gesture
-                    current_gesture = detect_gesture(hand_landmarks)
+                
+                # Detect gesture (pass all hands and face for multi-hand gestures)
+                current_gesture = detect_gesture(
+                    hand_results.multi_hand_landmarks[0],
+                    all_hands=hand_results.multi_hand_landmarks,
+                    face_landmarks=face_landmarks
+                )
+            elif face_landmarks:
+                # No hands detected but face is visible - check for face-only gestures like JIJIJA
+                # Create a dummy hand landmark for the function call
+                dummy_landmarks = type('obj', (object,), {'landmark': [type('obj', (object,), {'x': 0, 'y': 0})] * 21})()
+                current_gesture = detect_gesture(
+                    dummy_landmarks,
+                    all_hands=None,
+                    face_landmarks=face_landmarks
+                )
+            else:
+                # No hands or face detected, reset to neutral
+                current_gesture = "none"
             
             # Get appropriate meme for current gesture
+            # If it's a video, read the next frame
+            if is_video.get(current_gesture, False) and current_gesture in video_caps:
+                ret, video_frame = video_caps[current_gesture].read()
+                if ret:
+                    meme_images[current_gesture] = video_frame
+                else:
+                    # Loop video from beginning
+                    video_caps[current_gesture].set(cv2.CAP_PROP_POS_FRAMES, 0)
+                    ret, video_frame = video_caps[current_gesture].read()
+                    if ret:
+                        meme_images[current_gesture] = video_frame
+            
             meme = meme_images.get(current_gesture, meme_images["none"])
             
             # Resize meme to match frame height
@@ -312,6 +418,21 @@ def main():
                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
                        1, (0, 255, 255), 2, cv2.LINE_AA)
             
+            # Debug: Show mouth values if face is detected
+            if face_results.multi_face_landmarks:
+                face_landmarks = face_results.multi_face_landmarks[0]
+                upper_lip = face_landmarks.landmark[13]
+                lower_lip = face_landmarks.landmark[14]
+                left_corner = face_landmarks.landmark[61]
+                right_corner = face_landmarks.landmark[84]
+                
+                mouth_height = abs(upper_lip.y - lower_lip.y)
+                mouth_width = abs(right_corner.x - left_corner.x)
+                
+                cv2.putText(combined_frame, f"Mouth H: {mouth_height:.3f} W: {mouth_width:.3f}", 
+                           (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 
+                           0.6, (255, 255, 255), 1, cv2.LINE_AA)
+            
             # Add instructions
             cv2.putText(combined_frame, "Press 'q' to quit", 
                        (10, frame_height - 10), cv2.FONT_HERSHEY_SIMPLEX, 
@@ -327,6 +448,12 @@ def main():
     
     # Release resources
     cap.release()
+    
+    # Release all video captures
+    for video_cap in video_caps.values():
+        if video_cap.isOpened():
+            video_cap.release()
+    
     cv2.destroyAllWindows()
     print("Application closed successfully!")
 
