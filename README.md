@@ -6,11 +6,11 @@ Real-time hand gesture detection with meme display using MediaPipe and OpenCV!
 
 - **Real-time hand gesture detection** using MediaPipe Hands
 - **5 recognizable gestures**:
-  - 👍 Thumbs up
-  - ✌️ Peace sign
-  - ✊ Fist
-  - 🖐️ Open palm
-  - 👌 OK sign
+  - JIJIJA clash royale (just laugh)
+  - Crazy jawline (finger in your jaw)
+  - SIX SEVEN (literally do the gesture)
+  - Goblin crying, close both fists and show them close to your face
+  - 👌 default sign
 - **Dynamic meme display** - shows different meme for each gesture
 - **Side-by-side view** - webcam feed and meme image displayed together
 - **Beginner-friendly** - fully commented and easy to understand
