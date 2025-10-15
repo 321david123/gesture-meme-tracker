@@ -32,11 +32,10 @@ Real-time hand gesture detection with meme display using MediaPipe and OpenCV!
       - (these will change) 
    - Create an `images` folder in the same directory as the script (it will be created automatically if it doesn't exist)
    - Add the following image files:
-     - `thumbs_up.jpg` - for thumbs up gesture
-     - `peace.jpg` - for peace sign
-     - `fist.jpg` - for fist gesture
-     - `open_palm.jpg` - for open palm
-     - `ok_sign.jpg` - for OK sign
+     - `JIJIJA.mp4` - Laughing royale
+     - `CERRAO.mp4` - Crazy jawline
+     - `MIMIMI.mp4` - Goblin crying
+     - `SIXSEVEN.mp4` - 6 7 
      - `default.jpg` - shown when no gesture detected
 
    **Note:** You can use `.jpg`, `.png`, or `.jpeg` formats (update filenames in code accordingly)
@@ -55,11 +54,11 @@ python gesture_meme_tracker.py
 
 The script uses MediaPipe's 21 hand landmarks to identify gestures:
 
-- **Thumbs up**: Only thumb extended upward, all other fingers closed
-- **Peace sign**: Index and middle fingers extended, others closed
-- **Fist**: All fingers closed
-- **Open palm**: All 4 fingers extended
-- **OK sign**: Thumb and index finger tips touch, forming a circle
+  - JIJIJA clash royale (just laugh)
+  - Crazy jawline (finger in your jaw)
+  - SIX SEVEN (literally do the gesture)
+  - Goblin crying, close both fists and show them close to your face
+  - 👌 default sign
 
 ## 🎨 Customization
 
