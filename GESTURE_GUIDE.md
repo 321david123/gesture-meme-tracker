@@ -1,4 +1,4 @@
-# Gesture Guide - Clash Royale Edition
+# Gesture Guide - Clash Royale Edition 1
 
 ## 🎥 Custom Video Reactions (MP4)
 
