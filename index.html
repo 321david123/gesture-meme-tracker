@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Meme Tracker - Clash Royale Edition</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- MediaPipe Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <h1>🎭 Gesture Meme Tracker</h1>
+            <p class="subtitle">Clash Royale Edition - Make gestures and see the memes!</p>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Video Display Section -->
+            <div class="video-section">
+                <!-- Webcam Feed -->
+                <div class="video-container">
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="canvas"></canvas>
+                    <div class="gesture-label" id="gestureLabel">Gesture: None</div>
+                </div>
+
+                <!-- Meme Display -->
+                <div class="meme-container">
+                    <video id="memeVideo" loop muted playsinline style="display: none;"></video>
+                    <img id="memeImage" style="display: none;" alt="Meme">
+                    <div class="loading" id="loading">
+                        <p>📸 Initializing camera...</p>
+                        <button id="startButton" style="display: none;">Start Camera</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="instructions">
+                <h2>🖐️ Gesture Guide</h2>
+                <div class="gesture-grid">
+                    <div class="gesture-item">
+                        <span class="emoji">😂</span>
+                        <strong>JIJIJA</strong>
+                        <p>Just laugh (open mouth)</p>
+                    </div>
+                    <div class="gesture-item">
+                        <span class="emoji">🤐</span>
+                        <strong>MIMIMI</strong>
+                        <p>Both hands closed (fists)</p>
+                    </div>
+                    <div class="gesture-item">
+                        <span class="emoji">⚖️</span>
+                        <strong>SIXSEVEN</strong>
+                        <p>Balance pose (hands wide)</p>
+                    </div>
+                    <div class="gesture-item">
+                        <span class="emoji">🤫</span>
+                        <strong>CERRAO</strong>
+                        <p>One finger up (index)</p>
+                    </div>
+                    <div class="gesture-item">
+                        <span class="emoji">👌</span>
+                        <strong>DEFAULT</strong>
+                        <p>Neutral state</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Info (optional, can be hidden) -->
+            <div class="debug-info" id="debugInfo" style="display: none;">
+                <p>FPS: <span id="fps">0</span></p>
+                <p>Hands Detected: <span id="handsCount">0</span></p>
+                <p>Face Detected: <span id="faceDetected">No</span></p>
+                <p>Mouth: H=<span id="mouthHeight">0</span> W=<span id="mouthWidth">0</span></p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>Made with ❤️ using MediaPipe and JavaScript</p>
+            <p class="tip">💡 Tip: Ensure good lighting and keep your hand clearly visible!</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

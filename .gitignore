@@ -4,32 +4,28 @@ __pycache__/
 *$py.class
 *.so
 .Python
-venv/
 env/
+venv/
 ENV/
 *.egg-info/
-dist/
-build/
+
+# Vercel
+.vercel
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Project specific
-*.pyc
-
-# Optional: Keep placeholder for images but ignore actual image files
-# Uncomment if you don't want to commit meme images
-# images/*.jpg
-# images/*.png
-# images/*.jpeg
-# !images/README.txt
-
-
+# Local test files
+test_*.py
