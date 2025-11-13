@@ -217,12 +217,20 @@ function detectGesture(handLandmarks, allHands, faceLandmarks) {
  * Detect face-only gestures (JIJIJA - laughing)
  */
 function detectFaceGesture(faceLandmarks) {
-    // Key face landmarks for mouth detection
+    if (!faceLandmarks || !faceLandmarks.length) {
+        return "none";
+    }
+
+    // Key face landmarks for mouth detection (matching Python version)
     // 13: upper lip, 14: lower lip, 61: left mouth corner, 291: right mouth corner
     const upperLip = faceLandmarks[13];
     const lowerLip = faceLandmarks[14];
     const leftCorner = faceLandmarks[61];
     const rightCorner = faceLandmarks[291];
+
+    if (!upperLip || !lowerLip || !leftCorner || !rightCorner) {
+        return "none";
+    }
 
     // Calculate mouth opening
     const mouthHeight = Math.abs(upperLip.y - lowerLip.y);
@@ -234,7 +242,7 @@ function detectFaceGesture(faceLandmarks) {
         mouthWidthElement.textContent = mouthWidth.toFixed(3);
     }
 
-    // Check if mouth is open (laughing)
+    // Check if mouth is open (laughing) - same thresholds as Python version
     if (mouthHeight > 0.01 && mouthWidth > 0.005) {
         return "jijija";
     }
@@ -255,12 +263,14 @@ async function onResults(results) {
     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
     let detectedGesture = "none";
-    let faceLandmarks = null;
 
     // Process with face mesh to detect mouth
-    if (results.image) {
+    if (results.image && faceMesh) {
         await faceMesh.send({ image: results.image });
     }
+
+    // Use the stored face landmarks from the faceMesh callback
+    const currentFaceLandmarks = window.faceLandmarks;
 
     // Draw hand landmarks
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -285,7 +295,7 @@ async function onResults(results) {
         detectedGesture = detectGesture(
             results.multiHandLandmarks[0],
             results.multiHandLandmarks,
-            faceLandmarks
+            currentFaceLandmarks
         );
     } else {
         // No hands detected
@@ -294,7 +304,7 @@ async function onResults(results) {
         }
         
         // Check for face-only gestures
-        detectedGesture = detectGesture(null, null, faceLandmarks);
+        detectedGesture = detectGesture(null, null, currentFaceLandmarks);
     }
 
     canvasCtx.restore();
