@@ -63,6 +63,8 @@ function initHands() {
 /**
  * Initialize MediaPipe Face Mesh
  */
+let storedFaceLandmarks = null;
+
 function initFaceMesh() {
     faceMesh = new FaceMesh({
         locateFile: (file) => {
@@ -75,6 +77,22 @@ function initFaceMesh() {
         refineLandmarks: true,
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
+    });
+
+    // Set up face mesh results handler
+    faceMesh.onResults((results) => {
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            storedFaceLandmarks = results.multiFaceLandmarks[0];
+            
+            if (faceDetectedElement) {
+                faceDetectedElement.textContent = "Yes";
+            }
+        } else {
+            storedFaceLandmarks = null;
+            if (faceDetectedElement) {
+                faceDetectedElement.textContent = "No";
+            }
+        }
     });
 }
 
@@ -287,32 +305,6 @@ async function onResults(results) {
         updateGestureDisplay(currentGesture);
     }
 }
-
-/**
- * Face mesh results handler
- */
-let storedFaceLandmarks = null;
-
-faceMesh.onResults((results) => {
-    if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-        storedFaceLandmarks = results.multiFaceLandmarks[0];
-        
-        if (faceDetectedElement) {
-            faceDetectedElement.textContent = "Yes";
-        }
-
-        // Draw face mesh on canvas (optional)
-        // drawConnectors(canvasCtx, storedFaceLandmarks, FACEMESH_TESSELATION, {
-        //     color: '#C0C0C070',
-        //     lineWidth: 1
-        // });
-    } else {
-        storedFaceLandmarks = null;
-        if (faceDetectedElement) {
-            faceDetectedElement.textContent = "No";
-        }
-    }
-});
 
 // Make face landmarks available to gesture detection
 Object.defineProperty(window, 'faceLandmarks', {
